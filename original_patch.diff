@@ -1,0 +1,130 @@
+diff -Naur openstack_dashboard.orig/dashboards/identity/application_credentials/forms.py openstack_dashboard.garr/dashboards/identity/application_credentials/forms.py
+--- openstack_dashboard.orig/dashboards/identity/application_credentials/forms.py	2019-01-22 11:18:45.058537349 +0000
++++ openstack_dashboard.garr/dashboards/identity/application_credentials/forms.py	2019-01-22 11:18:54.610593018 +0000
+@@ -30,6 +30,9 @@
+ class CreateApplicationCredentialForm(forms.SelfHandlingForm):
+     # Hide the domain_id and domain_name by default
+     name = forms.CharField(max_length=255, label=_("Name"))
++    namespace = forms.CharField(max_length=255,
++                                label=_("Namespace (Kubernetes)"),
++                                required=False) # GARR
+     description = forms.CharField(
+         widget=forms.widgets.Textarea(attrs={'rows': 4}),
+         label=_("Description"),
+@@ -98,6 +101,7 @@
+             )
+             self.request.session['application_credential'] = \
+                 new_app_cred.to_dict()
++            self.request.session['application_credential']['namespace'] = data['namespace'] # GARR
+             request.method = 'GET'
+             return self.next_view.as_view()(request)
+         except exceptions.Conflict:
+diff -Naur openstack_dashboard.orig/dashboards/identity/application_credentials/templates/application_credentials/_success.html openstack_dashboard.garr/dashboards/identity/application_credentials/templates/application_credentials/_success.html
+--- openstack_dashboard.orig/dashboards/identity/application_credentials/templates/application_credentials/_success.html	2019-01-22 11:18:45.058537349 +0000
++++ openstack_dashboard.garr/dashboards/identity/application_credentials/templates/application_credentials/_success.html	2019-01-22 11:18:54.610593018 +0000
+@@ -31,5 +31,9 @@
+         <span class="fa fa-download"></span>
+         {{ download_clouds_yaml_label }}
+     </a>
++    <a href="{{ download_kubeconfig_url }}" class="btn btn-default"> <!-- GARR -->
++        <span class="fa fa-download"></span>
++        {{ download_kubeconfig_label }}
++    </a>
+     <a onClick="location.href='{{cancel_url}}'" href="{{ cancel_url }}" class="btn btn-default">{{ cancel_label }}</a>
+ {% endblock %}
+diff -Naur openstack_dashboard.orig/dashboards/identity/application_credentials/templates/application_credentials/kubeconfig.template openstack_dashboard.garr/dashboards/identity/application_credentials/templates/application_credentials/kubeconfig.template
+--- openstack_dashboard.orig/dashboards/identity/application_credentials/templates/application_credentials/kubeconfig.template	1970-01-01 00:00:00.000000000 +0000
++++ openstack_dashboard.garr/dashboards/identity/application_credentials/templates/application_credentials/kubeconfig.template	2019-01-22 11:18:54.610593018 +0000
+@@ -0,0 +1,26 @@
++apiVersion: v1
++kind: Config
++clusters:
++- name: kubernetes
++  cluster:
++    server: "https://90.147.161.27:443"
++    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNakNDQWhxZ0F3SUJBZ0lKQU4rUm5hOVdwOTZNTUEwR0NTcUdTSWIzRFFFQkN3VUFNQlV4RXpBUkJnTlYKQkFNTUNqRXdMalF1TkM0eE5ERXdIaGNOTVRnd056QTVNVGN5TWpFeldoY05Namd3TnpBMk1UY3lNakV6V2pBVgpNUk13RVFZRFZRUUREQW94TUM0MExqUXVNVFF4TUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCCkNnS0NBUUVBcTZpTXZJWXBnZzF4OXpkYXNsdTVrSndRUnpUM0hVeVlubGxWZnliV0trbDgvdW1uQmdsV3JjbzgKWm1oeXFXaHhxV3E5SGQ5WHhWZllTQXZpTUs4MVVJd0dtSUEyV2JETjgxcTVOY3MwckRSMkNDMytIVExPVzNhYQpxZjY2R0doc2ZGZ1phMGtPNGpKR0lHc09YWkVBaGFOM0NSU1Q2L2FmaUV0L1RpWndHeTk4d2FQVmtDV3ZrNlVvCkltdUtrd2t1YWxEOXpqS2o3ck9QOVBRYWNoL2tJUG5ncnJFQTh1bUpQdGxFMGdMVmVYMW5vbGpodnJYUUd4Ry8KOE4zWGZ6cE1BNU1FUXQ4SkwwaXdNd29IUHpjYjB0bzNqME5QTWdJdTI0UEtGWDhMam9icmVJMWZtWXBQZjJjbwp1RkxuODkvdktTeW8vcWNXb1FWUWdINy93TnEwQVFJREFRQUJvNEdFTUlHQk1CMEdBMVVkRGdRV0JCUTNsL3hMCkVxci9EenFJWGRWZ0trU2NYS0FCUkRCRkJnTlZIU01FUGpBOGdCUTNsL3hMRXFyL0R6cUlYZFZnS2tTY1hLQUIKUktFWnBCY3dGVEVUTUJFR0ExVUVBd3dLTVRBdU5DNDBMakUwTVlJSkFOK1JuYTlXcDk2TU1Bd0dBMVVkRXdRRgpNQU1CQWY4d0N3WURWUjBQQkFRREFnRUdNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJjVUlTaHlYQmFYaFVYCnhoWHcvWHBYK3BKTUJvbzZmbnNWeXhPbE44MExwYXBWdjUwdCt0ZnJHQTdKK3kyazFNcUlTcmZLZE9ITmp1OHcKOFBnL0xHUjRnSFljQm1nS3MxWGR2d0FDcUNrNEVYUldoMUFBVmxCdDE0aHFIRjNYYjZmNmxUV091R29OcjZ6NAp4WFBCdEZqN0oxUGc0SjNJMFZ4QkttQmJxTkFMTkhBWGdveTd1MnBVbWd2bXE3akZkM2prVkc2TUpHa0tyOWNPCm9tWXRJOEhURXpTTXJTWmtsaC8rYVgvQmdnZnZTei9OSW03VnRqK1g1dnNSZ3dqaUxDL01qdGJibGx4TGZzTCsKQk9RMmNzRmhXekNJVUVEQXVmTk1BdFNHU05wNDJrRWo5TjVteXpYMGVFY3B0Q1BXdFloRi9jdmZMUGp0Q3N6dgpWTm9ZRGpYdQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t
++contexts:
++- name: kubernetes
++  context:
++    cluster: kubernetes
++    user: {{ user }}
++    namespace: {{ namespace }}
++current-context: kubernetes
++users:
++  - name: {{ user }}
++    user:
++      exec:
++        apiVersion: client.authentication.k8s.io/v1beta1
++        command: bin/kubectl-keystone-auth
++        args:
++        - "--keystone-url={{ auth_url }}
++        - "--domain-name=none"
++        - "--user-name={{ user }}"
++        - "--application-credential-id={{ application_credential_id }}"
++        - "--application-credential-secret={{ application_credential_secret }}"
+diff -Naur openstack_dashboard.orig/dashboards/identity/application_credentials/urls.py openstack_dashboard.garr/dashboards/identity/application_credentials/urls.py
+--- openstack_dashboard.orig/dashboards/identity/application_credentials/urls.py	2019-01-22 11:18:45.058537349 +0000
++++ openstack_dashboard.garr/dashboards/identity/application_credentials/urls.py	2019-01-22 11:18:54.610593018 +0000
+@@ -28,6 +28,8 @@
+         views.CreateSuccessfulView.as_view(), name='success'),
+     url(r'^download_openrc/$',
+         views.download_rc_file, name='download_openrc'),
++    url(r'^download_kubeconfig/$', # GARR
++        views.download_kubeconfig_file, name='download_kubeconfig'),
+     url(r'^download_clouds_yaml/$',
+         views.download_clouds_yaml_file, name='download_clouds_yaml'),
+ ]
+diff -Naur openstack_dashboard.orig/dashboards/identity/application_credentials/views.py openstack_dashboard.garr/dashboards/identity/application_credentials/views.py
+--- openstack_dashboard.orig/dashboards/identity/application_credentials/views.py	2019-01-22 11:18:45.058537349 +0000
++++ openstack_dashboard.garr/dashboards/identity/application_credentials/views.py	2019-01-22 11:18:54.610593018 +0000
+@@ -40,6 +40,7 @@
+ class IndexView(tables.DataTableView):
+     table_class = project_tables.ApplicationCredentialsTable
+     template_name = 'identity/application_credentials/index.html'
++    page_title = _("Application Credentials GARR") # GARR
+ 
+     def needs_filter_first(self, table):
+         return self._needs_filter_first
+@@ -96,14 +97,18 @@
+         'horizon:identity:application_credentials:index')
+     cancel_label = _("Close")
+     download_openrc_label = _("Download openrc file")
++    download_kubeconfig_label = _("Download kubeconfig file") # GARR
+     download_clouds_yaml_label = _("Download clouds.yaml")
+ 
+     def get_context_data(self, **kwargs):
+         context = super(CreateSuccessfulView, self).get_context_data(**kwargs)
+         context['download_openrc_label'] = self.download_openrc_label
++        context['download_kubeconfig_label'] = self.download_kubeconfig_label # GARR
+         context['download_clouds_yaml_label'] = self.download_clouds_yaml_label
+         context['download_openrc_url'] = reverse(
+             'horizon:identity:application_credentials:download_openrc')
++        context['download_kubeconfig_url'] = reverse(
++           'horizon:identity:application_credentials:download_kubeconfig') # GARR
+         context['download_clouds_yaml_url'] = reverse(
+             'horizon:identity:application_credentials:download_clouds_yaml')
+         return context
+@@ -128,6 +133,8 @@
+     context = dict(auth_url=auth_url,
+                    interface=interface,
+                    region=region,
++                   user=request.user, # GARR
++                   namespace=app_cred['namespace'], # GARR
+                    application_credential_id=app_cred['id'],
+                    application_credential_name=app_cred['name'],
+                    application_credential_secret=app_cred['secret'])
+@@ -150,6 +157,14 @@
+     response = _render_attachment(filename, template, context, request)
+     return response
+ 
++
++def download_kubeconfig_file(request):
++    context = _get_context(request)
++    template = 'identity/application_credentials/kubeconfig.template' # GARR
++    filename = 'app-cred-%s-kubeconfig' % context['application_credential_name']
++    response = _render_attachment(filename, template, context, request)
++    return response
++
+ 
+ def download_clouds_yaml_file(request):
+     context = _get_context(request)
