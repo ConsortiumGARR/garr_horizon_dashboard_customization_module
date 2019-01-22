@@ -56,7 +56,6 @@ django.conf.settings.TEMPLATES[0]['DIRS'].insert(0, template_dir)
 # and a customization module provided template
 def download_kubeconfig_file(request):
     context = _GARR_get_context(request)
-    #template = 'identity/application_credentials/kubeconfig.template'
     template = 'kubeconfig.template'
     filename = 'app-cred-%s-kubeconfig' % context['application_credential_name']
     response = views._render_attachment(filename, template, context, request)
@@ -66,7 +65,6 @@ def download_kubeconfig_file(request):
 views.download_kubeconfig_file = download_kubeconfig_file #XXX: do we need this line?
 
 # and to the URL patterns
-# urls.urlpatterns.append( url(r'^download_kubeconfig/$', views.download_kubeconfig_file, name='download_kubeconfig') )
 urls.urlpatterns.append( url(r'^download_kubeconfig/$', download_kubeconfig_file, name='download_kubeconfig') )
 # ------------------------------------------------------------------------------
 
