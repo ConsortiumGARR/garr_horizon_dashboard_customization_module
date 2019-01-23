@@ -34,6 +34,14 @@ import django.conf
 
 import os
 
+
+# ------------------------------------------------------------------------------
+# remove the admin panels
+# merged from ansible-fed-keystone
+import garrcloud.override
+# ------------------------------------------------------------------------------
+
+
 # ------------------------------------------------------------------------------
 # define the function _GARR_get_context based on _get_context to add to the
 # context some parameters that we need for the kubeconfig file
