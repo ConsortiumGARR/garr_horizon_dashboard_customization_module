@@ -117,6 +117,15 @@ forms.GARR_CreateApplicationCredentialForm = GARR_CreateApplicationCredentialFor
 
 
 # ------------------------------------------------------------------------------
+def computeNamespaceName(os_name):
+    # kubernetes allows only namespaces which are validated by the regular expression '[a-z0-9]([-a-z0-9]*[a-z0-9])?'
+    # i.e. made by lowercase letters, numbers and '-' and starting with a lowercase letter
+    lowername = str(os_name).lower()
+    name = lowername.replace('.', '-').replace('@', '-')
+    filtered = [ c for c in name if (ord(c) >= ord('a') and ord(c) <= ord('z')) or (ord(c) >= ord('0') and ord(c) <= ord('9')) or c == '-' ]
+    return "".join(filtered)
+
+
 # Create a new view class which uses both
 # GARR_CreateApplicationCredentialForm and GARR_CreateSuccessfulView
 class GARR_CreateView(views.CreateView):
@@ -125,6 +134,7 @@ class GARR_CreateView(views.CreateView):
     def get_form_kwargs(self):
         kwargs = views.CreateView.get_form_kwargs(self)
         kwargs['next_view'] = GARR_CreateSuccessfulView
+        kwargs['initial'] = {'namespace': computeNamespaceName(self.request.user)}
         return kwargs
 
 # add it to the views module
