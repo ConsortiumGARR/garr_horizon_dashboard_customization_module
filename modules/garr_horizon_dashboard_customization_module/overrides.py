@@ -33,6 +33,7 @@ from django.urls import reverse
 import django.conf
 
 import os
+import hashlib
 
 
 # ------------------------------------------------------------------------------
@@ -120,11 +121,7 @@ forms.GARR_CreateApplicationCredentialForm = GARR_CreateApplicationCredentialFor
 def computeNamespaceName(os_name):
     # kubernetes allows only namespaces which are validated by the regular expression '[a-z0-9]([-a-z0-9]*[a-z0-9])?'
     # i.e. made by lowercase letters, numbers and '-' and starting with a lowercase letter
-    lowername = str(os_name).lower()
-    name = lowername.replace('.', '-').replace('@', '-')
-    filtered = [ c for c in name if (ord(c) >= ord('a') and ord(c) <= ord('z')) or (ord(c) >= ord('0') and ord(c) <= ord('9')) or c == '-' ]
-    return "".join(filtered)
-
+    return hashlib.sha1(str(os_name) + "\n").hexdigest()
 
 # Create a new view class which uses both
 # GARR_CreateApplicationCredentialForm and GARR_CreateSuccessfulView
