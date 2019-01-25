@@ -121,7 +121,14 @@ forms.GARR_CreateApplicationCredentialForm = GARR_CreateApplicationCredentialFor
 def computeNamespaceName(os_name):
     # kubernetes allows only namespaces which are validated by the regular expression '[a-z0-9]([-a-z0-9]*[a-z0-9])?'
     # i.e. made by lowercase letters, numbers and '-' and starting with a lowercase letter
-    return hashlib.sha1(str(os_name) + "\n").hexdigest()
+    # and not longer than 63 characters
+    name = str(os_name)
+    name = name.lower()
+    name = "".join([ c for c in name if (ord(c) >= ord('a') and ord(c) <= ord('z')) or (ord(c) >= ord('0') and ord(c) <= ord('9')) or c == '@'])
+    name = name.replace('@', '-')
+    name = "g-" + name  # fix usernames beginning with numbers
+    name = name[:60]
+    return name
 
 # Create a new view class which uses both
 # GARR_CreateApplicationCredentialForm and GARR_CreateSuccessfulView
