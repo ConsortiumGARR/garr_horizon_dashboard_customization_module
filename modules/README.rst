@@ -16,6 +16,11 @@ credentials creation: it introduces a field where the user can select a
 kubernetes namespace and a button to download a pre-compiled kubernetes
 configuration file.
 
-.. TODO: add screenshots
+Screenshots
+-----------
+
+.. image:: img/dashboard_app_cred_1.png
+
+.. image:: img/dashboard_app_cred_2.png
 
 
